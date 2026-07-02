@@ -1,80 +1,826 @@
-﻿# C语言学习小教练 - 本地知识库
+# C语言学习小教练 - 本地知识库（增强版）
 
 import re
+import difflib
 
 KNOWLEDGE_BASE = {
     "基础语法": {
-        "keywords": ["printf", "scanf", "变量", "数据类型", "int", "char", "float", "double", "const", "sizeof", "输出", "输入", "注释"],
-        "content": "## C语言基础语法\n\n### Hello World\n```c\n#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}\n```\n\n### 基本数据类型\n| 类型 | 大小 | 范围 |\n|------|------|------|\n| char | 1字节 | -128 ~ 127 |\n| int | 4字节 | -2^31 ~ 2^31-1 |\n| float | 4字节 | 约6位精度 |\n| double | 8字节 | 约15位精度 |\n\n### 变量声明与赋值\n```c\nint age = 18;\nfloat pi = 3.14;\nchar grade = \"A\";\nconst int MAX = 100;  // 常量\n```\n\n### 输入输出\n```c\nint num;\nprintf(\"请输入一个数字: \");\nscanf(\"%d\", &num);\nprintf(\"你输入的是: %d\\n\", num);\n```\n\n### 格式化占位符\n- `%d` - 整数\n- `%f` - 浮点数\n- `%c` - 字符\n- `%s` - 字符串\n- `%p` - 指针\n- `%x` - 十六进制"
+        "keywords": ["printf", "scanf", "变量", "数据类型", "int", "char", "float", "double",
+                     "const", "sizeof", "输出", "输入", "注释", "常量", "标识符", "关键字"],
+        "related": ["变量", "数据类型转换", "类型转换", "格式化", "转义"],
+        "content": """## C语言基础语法
+
+### Hello World
+`c
+#include <stdio.h>
+
+int main() {
+    printf("Hello, World!\\n");
+    return 0;
+}
+`
+
+### 基本数据类型
+| 类型 | 大小 | 范围 | 格式化 |
+|------|------|------|--------|
+| char | 1字节 | -128 ~ 127 | %c |
+| int | 4字节 | -2^31 ~ 2^31-1 | %d |
+| unsigned int | 4字节 | 0 ~ 2^32-1 | %u |
+| float | 4字节 | 约6位精度 | %f |
+| double | 8字节 | 约15位精度 | %lf |
+| long long | 8字节 | -2^63 ~ 2^63-1 | %lld |
+
+### 变量声明与赋值
+`c
+int age = 18;
+float pi = 3.14;
+char grade = 'A';
+const int MAX = 100;  // 常量不可修改
+`
+
+### 输入输出
+`c
+int num;
+printf("请输入一个数字: ");
+scanf("%d", &num);  // 注意 & 取地址符
+printf("你输入的是: %d\\n", num);
+`
+
+**💡 常见错误**：scanf 忘记加 & 会导致段错误！
+"""
     },
     "控制流": {
-        "keywords": ["if", "else", "switch", "case", "for", "while", "do", "循环", "条件", "判断", "break", "continue", "goto"],
-        "content": "## C语言控制流\n\n### if-else 条件判断\n```c\nint score = 85;\nif (score >= 90) {\n    printf(\"优秀\");\n} else if (score >= 80) {\n    printf(\"良好\");\n} else if (score >= 60) {\n    printf(\"及格\");\n} else {\n    printf(\"不及格\");\n}\n```\n\n### switch 语句\n```c\nint option = 2;\nswitch (option) {\n    case 1:\n        printf(\"选项1\");\n        break;\n    case 2:\n        printf(\"选项2\");\n        break;\n    default:\n        printf(\"其他\");\n        break;\n}\n```\n\n### for 循环\n```c\nfor (int i = 0; i < 5; i++) {\n    printf(\"%d \", i);  // 0 1 2 3 4\n}\n```\n\n### while 循环\n```c\nint count = 0;\nwhile (count < 5) {\n    printf(\"%d \", count);\n    count++;\n}\n```\n\n### do-while 循环\n```c\nint i = 0;\ndo {\n    printf(\"%d \", i);\n    i++;\n} while (i < 5);\n```\n\n### break 和 continue\n```c\nfor (int i = 0; i < 10; i++) {\n    if (i == 3) continue;  // 跳过3\n    if (i == 7) break;     // 到7停止\n    printf(\"%d \", i);\n}\n// 输出: 0 1 2 4 5 6\n```"
+        "keywords": ["if", "else", "switch", "case", "for", "while", "do", "循环",
+                     "条件", "判断", "break", "continue", "goto", "分支"],
+        "related": ["三元运算符", "短路求值", "死循环"],
+        "content": """## C语言控制流
+
+### if-else
+`c
+int score = 85;
+if (score >= 90) {
+    printf("优秀\\n");
+} else if (score >= 80) {
+    printf("良好\\n");
+} else if (score >= 60) {
+    printf("及格\\n");
+} else {
+    printf("不及格\\n");
+}
+`
+
+### switch（注意一定要 break!）
+`c
+int option = 2;
+switch (option) {
+    case 1: printf("选项1\\n"); break;
+    case 2: printf("选项2\\n"); break;
+    default: printf("其他\\n"); break;
+}
+// 忘记 break 会"穿透"执行下一个 case
+`
+
+### for 循环
+`c
+for (int i = 0; i < 5; i++) {
+    printf("%d ", i);  // 0 1 2 3 4
+}
+`
+
+### while 与 do-while
+`c
+// while: 先判断后执行
+int i = 0;
+while (i < 5) { printf("%d ", i); i++; }
+
+// do-while: 至少执行一次
+int j = 0;
+do { printf("%d ", j); j++; } while (j < 5);
+`
+
+### break vs continue
+| 关键字 | 作用 |
+|--------|------|
+| break | 立即跳出整个循环 |
+| continue | 跳过本次循环剩余语句，进入下一次 |
+"""
     },
     "数组": {
-        "keywords": ["数组", "array", "二维数组", "下标", "索引", "遍历"],
-        "content": "## C语言数组\n\n### 一维数组\n```c\n// 声明和初始化\nint nums[5] = {1, 2, 3, 4, 5};\nint arr[] = {10, 20, 30};  // 自动推断大小\n\n// 访问和修改\nnums[0] = 100;  // 修改第一个元素\nprintf(\"%d\", nums[2]);  // 访问第三个元素\n\n// 遍历数组\nfor (int i = 0; i < 5; i++) {\n    printf(\"%d \", nums[i]);\n}\n```\n\n### 二维数组\n```c\nint matrix[2][3] = {\n    {1, 2, 3},\n    {4, 5, 6}\n};\n\n// 遍历\nfor (int i = 0; i < 2; i++) {\n    for (int j = 0; j < 3; j++) {\n        printf(\"%d \", matrix[i][j]);\n    }\n    printf(\"\\n\");\n}\n```\n\n### 数组作为函数参数\n```c\n// 数组传参时会退化为指针\nvoid printArray(int arr[], int size) {\n    for (int i = 0; i < size; i++) {\n        printf(\"%d \", arr[i]);\n    }\n}\n// 调用: printArray(nums, 5);\n```"
+        "keywords": ["数组", "array", "二维数组", "多维数组", "下标", "索引", "遍历",
+                     "变长数组", "VLA", "数组初始化"],
+        "related": ["数组越界", "数组参数"],
+        "content": """## C语言数组
+
+### 一维数组
+`c
+int nums[5] = {1, 2, 3, 4, 5};  // 完全初始化
+int arr[] = {10, 20, 30};        // 自动推断大小为3
+int zeros[10] = {0};             // 全部初始化为0
+
+nums[0] = 100;                    // 修改
+printf("%d", nums[2]);           // 访问
+
+// 遍历
+for (int i = 0; i < 5; i++) {
+    printf("%d ", nums[i]);
+}
+`
+
+### 二维数组
+`c
+int matrix[2][3] = {
+    {1, 2, 3},
+    {4, 5, 6}
+};
+
+for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 3; j++) {
+        printf("%d ", matrix[i][j]);
+    }
+    printf("\\n");
+}
+// 内存中实际是连续存储的
+`
+
+### 数组作为函数参数
+`c
+// 数组传参时会退化为指针！sizeof(arr) 会得到指针大小
+void printArray(int arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+}
+// 调用: printArray(nums, 5);
+`
+
+**💡 关键区别**：
+`c
+int arr[5];
+printf("%zu\\n", sizeof(arr));  // 20 (5 * 4)
+void func(int arr[]) {
+    printf("%zu\\n", sizeof(arr));  // 8 或 4（指针大小！）
+}
+`
+"""
     },
     "指针": {
-        "keywords": ["指针", "pointer", "*", "&", "NULL", "地址", "引用", "解引用", "野指针", "空指针", "malloc", "free"],
-        "content": "## C语言指针\n\n### 指针基础\n```c\nint a = 10;\nint *p = &a;  // p 存放 a 的地址\n\nprintf(\"a的值: %d\\n\", a);      // 10\nprintf(\"a的地址: %p\\n\", &a);   // 地址\nprintf(\"p的值: %p\\n\", p);       // 同 &a\nprintf(\"p指向的值: %d\\n\", *p);  // 10（解引用）\n```\n\n### 指针运算\n```c\nint arr[5] = {10, 20, 30, 40, 50};\nint *p = arr;  // 指向数组首元素\n\nprintf(\"%d\\n\", *p);       // 10\nprintf(\"%d\\n\", *(p+1));   // 20\nprintf(\"%d\\n\", *(p+2));   // 30\n\n// 遍历数组\nfor (int i = 0; i < 5; i++) {\n    printf(\"%d \", *(p + i));\n}\n```\n\n### 指针与函数\n```c\n// 通过指针修改值\nvoid swap(int *a, int *b) {\n    int temp = *a;\n    *a = *b;\n    *b = temp;\n}\n\nint x = 5, y = 10;\nswap(&x, &y);  // 传地址\n// 现在 x=10, y=5\n```\n\n### 动态内存分配\n```c\n#include <stdlib.h>\n\nint *arr = (int*)malloc(5 * sizeof(int));\nif (arr == NULL) {\n    printf(\"内存分配失败\");\n    return 1;\n}\n// 使用 arr...\nfree(arr);  // 释放内存\n```\n\n### 常见错误\n- 野指针：未初始化的指针\n- 空指针：指向 NULL 的指针，解引用会崩溃\n- 内存泄漏：malloc 后忘记 free\n- 悬空指针：free 后继续使用"
+        "keywords": ["指针", "pointer", "*", "&", "NULL", "地址", "引用", "解引用",
+                     "野指针", "空指针", "指针运算", "指针数组", "数组指针", "函数指针",
+                     "二级指针", "void*", "const指针"],
+        "related": ["指针和数组", "指针函数", "动态内存"],
+        "content": """## C语言指针
+
+### 指针基础
+`c
+int a = 10;
+int *p = &a;   // p 存放 a 的地址
+
+printf("a的值: %d\\n", a);      // 10
+printf("a的地址: %p\\n", &a);
+printf("p的值: %p\\n", p);       // 同 &a
+printf("p指向的值: %d\\n", *p);  // 10（解引用）
+`
+
+### 指针与数组
+`c
+int arr[5] = {10, 20, 30, 40, 50};
+int *p = arr;  // 数组名就是首地址
+
+// 以下三种写法等价
+printf("%d\\n", arr[2]);     // 30
+printf("%d\\n", *(arr+2));   // 30
+printf("%d\\n", *(p+2));     // 30
+`
+
+### 指针与 const
+`c
+const int *p;     // 指向常量的指针（不能改值，能改指向）
+int * const p;    // 指针常量（能改值，不能改指向）
+const int * const p; // 都不能改
+`
+
+### 函数指针
+`c
+int add(int a, int b) { return a + b; }
+int (*func_ptr)(int, int) = add;
+printf("%d\\n", func_ptr(3, 5));  // 8
+`
+
+### 常见错误
+- **野指针**：未初始化的指针，指向随机地址
+- **空指针**：p = NULL 后解引用会崩溃
+- **悬空指针**：free 后没置 NULL，继续使用
+- **内存泄漏**：malloc 后忘记 free
+"""
     },
     "函数": {
-        "keywords": ["函数", "function", "return", "参数", "传值", "传址", "递归", "声明", "定义", "调用", "void", "main"],
-        "content": "## C语言函数\n\n### 函数定义\n```c\n// 返回类型 函数名(参数列表) {\n//     函数体\n// }\n\nint add(int a, int b) {\n    return a + b;\n}\n```\n\n### 函数声明（原型）\n```c\n// 如果函数定义在使用之后，需要先声明\nint add(int a, int b);  // 声明\n\nint main() {\n    int result = add(3, 5);\n    return 0;\n}\n\nint add(int a, int b) {  // 定义\n    return a + b;\n}\n```\n\n### 传值 vs 传址\n```c\n// 传值（不影响原变量）\nvoid changeValue(int x) {\n    x = 100;\n}\n\n// 传址（可以修改原变量）\nvoid changeRef(int *x) {\n    *x = 100;\n}\n\nint a = 10;\nchangeValue(a);   // a 仍然是 10\nchangeRef(&a);    // a 变成 100\n```\n\n### 递归\n```c\n// 阶乘\nint factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}\n\n// 斐波那契数列\nint fib(int n) {\n    if (n <= 1) return n;\n    return fib(n-1) + fib(n-2);\n}\n```\n\n### main 函数参数\n```c\nint main(int argc, char *argv[]) {\n    printf(\"参数个数: %d\\n\", argc);\n    for (int i = 0; i < argc; i++) {\n        printf(\"argv[%d] = %s\\n\", i, argv[i]);\n    }\n    return 0;\n}\n```"
+        "keywords": ["函数", "function", "return", "参数", "传值", "传址", "递归",
+                     "声明", "定义", "调用", "void", "main", "内联", "inline",
+                     "static函数", "可变参数"],
+        "related": ["递归", "函数指针", "栈帧"],
+        "content": """## C语言函数
+
+### 函数定义与声明
+`c
+// 函数定义
+int add(int a, int b) {
+    return a + b;
+}
+
+// 如果定义在使用之后，需要先声明（函数原型）
+int add(int a, int b);
+
+int main() {
+    int result = add(3, 5);
+    return 0;
+}
+`
+
+### 传值 vs 传址
+`c
+void changeValue(int x) { x = 100; }   // 不影响原变量
+void changeRef(int *x)  { *x = 100; }  // 可以修改
+
+int a = 10;
+changeValue(a);   // a 仍然是 10
+changeRef(&a);    // a 变成 100
+`
+
+### static 函数
+`c
+// static 函数只在本文件可见，防止命名冲突
+static void helper() {
+    // 仅当前 .c 文件可用
+}
+`
+
+### 递归
+`c
+// 阶乘
+int factorial(int n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+
+// 递归注意：要有终止条件，避免栈溢出
+`
+"""
     },
     "字符串": {
-        "keywords": ["字符串", "string", "strlen", "strcpy", "strcat", "strcmp", "gets", "puts", "字符数组", "char"],
-        "content": "## C语言字符串\n\n### 字符串声明\n```c\n// 方式一：字符数组\nchar str1[] = \"Hello\";  // 自动加 \\0\nchar str2[20] = \"World\";\n\n// 方式二：字符指针\nchar *str3 = \"Hello\";  // 字符串常量，不可修改\n\n// 方式三：逐个赋值\nchar str4[] = {'H', 'e', 'l', 'l', 'o', '\\0'};\n```\n\n### 常用字符串函数（需包含 <string.h>）\n```c\n#include <string.h>\n\nchar s1[20] = \"Hello\";\nchar s2[] = \"World\";\n\nint len = strlen(s1);          // 长度: 5\nstrcpy(s1, s2);                // 复制: s1 = \"World\"\nstrcat(s1, s2);                // 拼接: s1 = \"HelloWorld\"\nint cmp = strcmp(s1, s2);      // 比较: 0相等, <0 s1<s2, >0 s1>s2\n```\n\n### 字符串输入输出\n```c\nchar name[50];\n\nprintf(\"请输入姓名: \");\nscanf(\"%s\", name);             // 读取（遇到空格停止）\nfgets(name, 50, stdin);         // 安全读取（包括空格）\nprintf(\"你好, %s\\n\", name);    // 输出\n```\n\n### 字符处理函数（需包含 <ctype.h>）\n```c\n#include <ctype.h>\nisalpha(c)  // 是否为字母\nisdigit(c)  // 是否为数字\nisupper(c)  // 是否为大写\nislower(c)  // 是否为小写\ntoupper(c)  // 转大写\ntolower(c)  // 转小写\n```"
+        "keywords": ["字符串", "string", "strlen", "strcpy", "strcat", "strcmp",
+                     "gets", "puts", "字符数组", "char", "sprintf", "sscanf",
+                     "strtok", "strstr", "strchr", "strncpy"],
+        "related": ["字符串字面量", "字符指针vs数组"],
+        "content": """## C语言字符串
+
+### 字符串声明方式
+`c
+char str1[] = "Hello";       // 可修改，栈上分配
+char *str2 = "Hello";        // 字符串常量，不可修改！
+char str3[20] = "World";
+`
+
+### 常用字符串函数（<string.h>）
+`c
+#include <string.h>
+
+char s1[20] = "Hello";
+char s2[] = "World";
+
+strlen(s1);               // 长度: 5（不包含 \\0）
+strcpy(s1, s2);           // 复制: s1 = "World"
+strncpy(s1, s2, 5);       // 安全复制
+strcat(s1, s2);           // 拼接: s1 = "HelloWorld"
+strncat(s1, s2, 3);       // 安全拼接
+strcmp(s1, s2);           // 比较: 0相等，<0 s1<s2
+strstr(s1, "ello");       // 查找子串
+`
+
+### strlen vs sizeof
+`c
+char str[] = "Hello";
+printf("%zu\\n", strlen(str));  // 5（字符个数）
+printf("%zu\\n", sizeof(str));  // 6（包含 \\0）
+`
+
+**⚠️**：gets() 不安全（缓冲区溢出），用 gets() 代替：
+`c
+char buf[100];
+fgets(buf, sizeof(buf), stdin);  // 安全！
+`
+"""
     },
     "结构体联合体": {
-        "keywords": ["struct", "结构体", "union", "联合体", "typedef", "enum", "枚举", "成员", "->"],
-        "content": "## C语言结构体与联合体\n\n### 结构体定义\n```c\nstruct Student {\n    char name[50];\n    int age;\n    float score;\n};\n\n// 使用\nstruct Student stu1;\nstrcpy(stu1.name, \"小明\");\nstu1.age = 18;\nstu1.score = 95.5;\n\nprintf(\"%s %d %.1f\\n\", stu1.name, stu1.age, stu1.score);\n```\n\n### typedef 简化类型名\n```c\ntypedef struct {\n    char name[50];\n    int age;\n    float score;\n} Student;\n\nStudent stu = {\"小明\", 18, 95.5};  // 不用写 struct 关键字\n```\n\n### 结构体指针\n```c\nStudent stu = {\"小明\", 18, 95.5};\nStudent *p = &stu;\n\n// 两种访问方式\nprintf(\"%s\\n\", (*p).name);   // 需要括号\nprintf(\"%s\\n\", p->name);     // 推荐：箭头运算符\n```\n\n### 结构体嵌套\n```c\ntypedef struct {\n    int year;\n    int month;\n    int day;\n} Date;\n\ntypedef struct {\n    char name[50];\n    Date birth;\n} Person;\n```\n\n### 联合体（union）\n```c\nunion Data {\n    int i;\n    float f;\n    char str[20];\n};\n\nunion Data data;\ndata.i = 10;        // 占4字节\ndata.f = 3.14;      // 覆盖 i，也占4字节\n// 所有成员共享同一块内存\n```\n\n### 枚举（enum）\n```c\nenum Weekday { MON, TUE, WED, THU, FRI, SAT, SUN };\nenum Weekday today = WED;\nprintf(\"%d\\n\", today);  // 2（从0开始编号）\n```"
+        "keywords": ["struct", "结构体", "union", "联合体", "typedef", "enum",
+                     "枚举", "成员", "->", "位域", "对齐", "padding", "结构体指针"],
+        "related": ["内存对齐", "位域", "结构体嵌套"],
+        "content": """## C语言结构体与联合体
+
+### 结构体定义和使用
+`c
+struct Student {
+    char name[50];
+    int age;
+    float score;
+};
+
+struct Student stu1;
+strcpy(stu1.name, "小明");
+stu1.age = 18;
+stu1.score = 95.5;
+`
+
+### typedef 简化
+`c
+typedef struct {
+    char name[50];
+    int age;
+    float score;
+} Student;
+
+Student stu = {"小明", 18, 95.5};  // 不用写 struct
+`
+
+### 结构体指针
+`c
+Student stu = {"小明", 18, 95.5};
+Student *p = &stu;
+printf("%s\\n", (*p).name);  // 需要括号
+printf("%s\\n", p->name);    // 推荐！
+`
+
+### 内存对齐（重要！）
+`c
+struct Example {
+    char c;      // 1字节
+    // 3字节 padding
+    int i;       // 4字节
+};
+// sizeof(struct Example) = 8，不是 5！
+`
+
+### 联合体（union）— 所有成员共享内存
+`c
+union Data {
+    int i;       // 4字节
+    float f;     // 4字节
+    char str[4]; // 4字节
+};
+// sizeof(union Data) = 4（最大成员的大小）
+`
+
+### 枚举
+`c
+enum Weekday { MON=1, TUE, WED, THU, FRI, SAT, SUN };
+enum Weekday today = WED;
+printf("%d\\n", today);  // 3
+`
+"""
     },
     "文件操作": {
-        "keywords": ["文件", "file", "fopen", "fclose", "fread", "fwrite", "fprintf", "fscanf", "fgets", "fputs", "fseek", "feof"],
-        "content": "## C语言文件操作\n\n### 打开和关闭文件\n```c\n#include <stdio.h>\n\nFILE *fp = fopen(\"data.txt\", \"r\");\nif (fp == NULL) {\n    printf(\"文件打开失败\\n\");\n    return 1;\n}\n\n// 文件操作...\n\nfclose(fp);  // 关闭文件\n```\n\n### 文件打开模式\n| 模式 | 含义 |\n|------|------|\n| \"r\" | 读取（文件必须存在） |\n| \"w\" | 写入（覆盖，不存在则创建） |\n| \"a\" | 追加 |\n| \"r+\" | 读写 |\n| \"w+\" | 读写（覆盖） |\n| \"a+\" | 读写（追加） |\n| \"rb\" | 二进制读取 |\n| \"wb\" | 二进制写入 |\n\n### 读取文件\n```c\nchar buffer[256];\n\n// 逐行读取\nwhile (fgets(buffer, sizeof(buffer), fp)) {\n    printf(\"%s\", buffer);\n}\n\n// 格式化读取\nint num;\nfscanf(fp, \"%d\", &num);\n```\n\n### 写入文件\n```c\nfprintf(fp, \"姓名: %s, 年龄: %d\\n\", \"小明\", 18);\nfputs(\"Hello, World!\\n\", fp);\nfputc(\"A\", fp);\n```\n\n### 二进制文件读写\n```c\n// 写入\nint data[5] = {1, 2, 3, 4, 5};\nfwrite(data, sizeof(int), 5, fp);\n\n// 读取\nint buffer[5];\nfread(buffer, sizeof(int), 5, fp);\n```\n\n### 文件定位\n```c\nfseek(fp, 0, SEEK_SET);  // 从头偏移0字节\nfseek(fp, 10, SEEK_CUR); // 从当前位置偏移10\nfseek(fp, 0, SEEK_END);  // 移动到末尾\nlong pos = ftell(fp);    // 获取当前位置\nrewind(fp);              // 回到开头\n```"
+        "keywords": ["文件", "file", "fopen", "fclose", "fread", "fwrite", "fprintf",
+                     "fscanf", "fgets", "fputs", "fseek", "feof", "ferror", "ftell",
+                     "rewind", "二进制", "文本", "FILE"],
+        "related": ["文件指针", "错误处理"],
+        "content": """## C语言文件操作
+
+### 打开和关闭文件
+`c
+FILE *fp = fopen("data.txt", "r");
+if (fp == NULL) {
+    perror("文件打开失败");  // 打印具体错误原因
+    return 1;
+}
+// 操作...
+fclose(fp);
+`
+
+### 文件打开模式
+| 模式 | 含义 | 文件不存在时 |
+|------|------|------------|
+| "r" | 读取 | 返回NULL |
+| "w" | 写入（覆盖） | 创建 |
+| "a" | 追加 | 创建 |
+| "r+" | 读写 | 返回NULL |
+| "w+" | 读写（覆盖） | 创建 |
+| "rb"/"wb" | 二进制模式 | — |
+
+### 逐行读取
+`c
+char buffer[256];
+while (fgets(buffer, sizeof(buffer), fp)) {
+    printf("%s", buffer);
+}
+`
+
+### 写入文件
+`c
+fprintf(fp, "姓名: %s, 年龄: %d\\n", "小明", 18);
+fputs("Hello, World!\\n", fp);
+`
+
+### 二进制文件
+`c
+int data[5] = {1, 2, 3, 4, 5};
+fwrite(data, sizeof(int), 5, fp);  // 写入
+
+int buffer[5];
+fread(buffer, sizeof(int), 5, fp); // 读取
+`
+
+### 文件定位
+`c
+fseek(fp, 0, SEEK_SET);   // 移到开头
+fseek(fp, 10, SEEK_CUR);  // 当前位置后移10字节
+fseek(fp, 0, SEEK_END);   // 移到末尾
+long pos = ftell(fp);      // 当前位置
+rewind(fp);                // 回到开头
+`
+"""
     },
     "内存管理": {
-        "keywords": ["malloc", "calloc", "realloc", "free", "内存", "动态分配", "堆", "栈", "内存泄漏"],
-        "content": "## C语言内存管理\n\n### 栈 vs 堆\n- **栈（Stack）**：局部变量自动分配和释放，大小有限\n- **堆（Heap）**：程序员手动分配和释放，空间大但需要管理\n\n### malloc 分配内存\n```c\n#include <stdlib.h>\n\n// 分配5个int的空间\nint *arr = (int*)malloc(5 * sizeof(int));\nif (arr == NULL) {\n    printf(\"内存分配失败\\n\");\n    return 1;\n}\n\n// 使用\nfor (int i = 0; i < 5; i++) {\n    arr[i] = i * 10;\n}\n\n// 释放\nfree(arr);\narr = NULL;  // 避免悬空指针\n```\n\n### calloc 分配并初始化为0\n```c\nint *arr = (int*)calloc(5, sizeof(int));\n// 所有元素自动初始化为0\n```\n\n### realloc 重新分配\n```c\nint *arr = (int*)malloc(5 * sizeof(int));\n// 扩展为10个int的空间\nint *temp = (int*)realloc(arr, 10 * sizeof(int));\nif (temp != NULL) {\n    arr = temp;\n} else {\n    printf(\"重新分配失败\\n\");\n}\n```\n\n### 常见问题\n| 问题 | 说明 |\n|------|------|\n| 内存泄漏 | malloc 后忘记 free |\n| 悬空指针 | free 后还继续使用 |\n| 缓冲区溢出 | 写超过分配的空间 |\n| 野指针 | 未初始化的指针 |\n| 重复释放 | 对同一块内存 free 两次 |\n\n### 最佳实践\n1. 每次 malloc 后检查是否为 NULL\n2. 成对使用 malloc/free\n3. free 后将指针置为 NULL\n4. 避免在函数外返回局部变量的地址"
+        "keywords": ["malloc", "calloc", "realloc", "free", "内存", "动态分配",
+                     "堆", "栈", "内存泄漏", "内存碎片", "aligned_alloc"],
+        "related": ["内存池", "RAII", "智能指针(C++)"],
+        "content": """## C语言内存管理
+
+### 栈 vs 堆
+| 特性 | 栈（Stack） | 堆（Heap） |
+|------|------------|------------|
+| 分配方式 | 自动 | 手动（malloc/free） |
+| 速度 | 快 | 慢 |
+| 大小 | 小（约1-8MB） | 大（可用内存） |
+| 生命周期 | 函数结束自动释放 | 直到 free |
+
+### malloc
+`c
+int *arr = (int*)malloc(5 * sizeof(int));
+if (arr == NULL) {
+    fprintf(stderr, "内存分配失败\\n");
+    return 1;
+}
+// 使用...
+free(arr);
+arr = NULL;  // 避免悬空指针！
+`
+
+### calloc — 分配并清零
+`c
+int *arr = (int*)calloc(5, sizeof(int));
+// 所有元素自动初始化为0，比 malloc + memset 更高效
+`
+
+### realloc — 重新分配
+`c
+int *arr = (int*)malloc(5 * sizeof(int));
+int *temp = (int*)realloc(arr, 10 * sizeof(int));
+if (temp != NULL) {
+    arr = temp;  // 注意：要用临时变量，realloc失败返回NULL
+} else {
+    // 原内存仍然有效，arr 不能丢
+    fprintf(stderr, "realloc失败\\n");
+}
+`
+
+### 常见问题对照表
+| 问题 | 原因 | 后果 |
+|------|------|------|
+| 内存泄漏 | malloc 后忘记 free | 内存耗尽 |
+| 悬空指针 | free 后继续使用 | 数据损坏/崩溃 |
+| 缓冲区溢出 | 写超过分配空间 | 安全漏洞 |
+| 野指针 | 未初始化指针 | 段错误 |
+| 重复释放 | double free | 程序崩溃 |
+| 使用未分配内存 | 访问 NULL 指针 | 段错误 |
+
+### 最佳实践
+1. 每次 malloc 后**必须检查 NULL**
+2. malloc/free **成对出现**
+3. free 后立即置 NULL
+4. 使用 algrind 检测内存泄漏
+5. 避免在函数外返回局部变量地址
+"""
     },
     "预处理": {
-        "keywords": ["#define", "#include", "宏", "预处理", "头文件", "条件编译", "ifdef", "ifndef", "pragma", "typedef"],
-        "content": "## C语言预处理指令\n\n### #include 包含头文件\n```c\n#include <stdio.h>    // 标准库头文件\n#include \"myheader.h\"  // 自定义头文件\n```\n\n### #define 宏定义\n```c\n#define PI 3.14159\n#define MAX(a, b) ((a) > (b) ? (a) : (b))\n#define SQUARE(x) ((x) * (x))\n\nint area = PI * r * r;\nint max = MAX(10, 20);     // 展开: ((10) > (20) ? (10) : (20))\n```\n\n### 条件编译\n```c\n#define DEBUG\n\n#ifdef DEBUG\n    printf(\"调试模式\\n\");\n#endif\n\n#ifndef RELEASE\n    printf(\"非发布版本\\n\");\n#endif\n\n#if defined(WIN32)\n    printf(\"Windows系统\\n\");\n#elif defined(__linux__)\n    printf(\"Linux系统\\n\");\n#else\n    printf(\"其他系统\\n\");\n#endif\n```\n\n### 预定义宏\n```c\nprintf(\"文件: %s\\n\", __FILE__);     // 当前文件名\nprintf(\"行号: %d\\n\", __LINE__);     // 当前行号\nprintf(\"日期: %s\\n\", __DATE__);     // 编译日期\nprintf(\"时间: %s\\n\", __TIME__);     // 编译时间\nprintf(\"函数: %s\\n\", __func__);     // 当前函数名\n```\n\n### #pragma 指令\n```c\n#pragma once  // 防止头文件重复包含\n\n// 或者使用传统方式\n#ifndef MYHEADER_H\n#define MYHEADER_H\n// 头文件内容...\n#endif\n```\n\n### typedef vs #define\n```c\ntypedef int* IntPtr;     // 类型别名\n#define INT_PTR int*    // 文本替换\n\nIntPtr a, b;    // a和b都是int*\nINT_PTR c, d;   // c是int*, d是int（危险！）\n```"
+        "keywords": ["#define", "#include", "宏", "预处理", "头文件", "条件编译",
+                     "ifdef", "ifndef", "pragma", "typedef", "宏函数", "##",
+                     "#运算符", "可变参数宏", "内联函数"],
+        "related": ["宏 vs 函数", "头文件守卫"],
+        "content": """## C语言预处理指令
+
+### #include
+`c
+#include <stdio.h>    // 标准库路径
+#include "myheader.h"  // 当前目录
+`
+
+### #define 宏
+`c
+#define PI 3.14159
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define SQUARE(x) ((x) * (x))
+
+int max = MAX(10, 20);  // 展开: ((10) > (20) ? (10) : (20))
+`
+
+**⚠️ 宏的陷阱**：
+`c
+#define BAD_SQUARE(x) x * x
+BAD_SQUARE(1+2)  // 展开为 1+2*1+2 = 5，不是9！
+// 正确: #define SQUARE(x) ((x) * (x))
+`
+
+### 条件编译
+`c
+#ifdef DEBUG
+    printf("调试模式\\n");
+#endif
+
+#ifndef RELEASE
+    printf("非发布版本\\n");
+#endif
+
+#if defined(WIN32)
+    printf("Windows\\n");
+#elif defined(__linux__)
+    printf("Linux\\n");
+#endif
+`
+
+### 预定义宏
+`c
+__FILE__   // 当前文件名
+__LINE__   // 当前行号
+__DATE__   // 编译日期
+__TIME__   // 编译时间
+__func__   // 当前函数名（C99）
+`
+
+### 头文件守卫
+`c
+#ifndef MYHEADER_H
+#define MYHEADER_H
+// 头文件内容...
+#endif
+// 或: #pragma once
+`
+"""
     },
     "常见错误": {
-        "keywords": ["错误", "报错", "bug", "调试", "debug", "segmentation fault", "段错误", "编译错误", "链接错误", "运行时错误"],
-        "content": "## C语言常见错误及调试\n\n### 编译错误\n```c\n// 忘记分号\nint a = 10  // 错误: 缺少;\n\n// 括号不匹配\nif (a > 0 {   // 错误: 缺少)\n\n// 变量未声明\nprintf(\"%d\", x);  // 错误: x未定义\n```\n\n### 链接错误\n```c\n// 函数声明了但没定义\n// undefined reference to `myFunc'\n// 检查: 是否包含了正确的.c文件\n```\n\n### 运行时错误\n| 错误 | 常见原因 |\n|------|---------|\n| 段错误 (Segmentation Fault) | 访问非法内存（野指针、数组越界、栈溢出） |\n| 浮点异常 (Floating Point Exception) | 除0错误 |\n| 缓冲区溢出 | 字符串操作超出数组范围 |\n| 内存泄漏 | malloc/free 不配对 |\n| 死循环 | 循环条件永不结束 |\n\n### 调试技巧\n```c\n#include <stdio.h>\n#include <assert.h>\n\n// 1. 打印调试\nprintf(\"DEBUG: x = %d, line = %d\\n\", x, __LINE__);\n\n// 2. 使用断言\nassert(p != NULL);  // 条件不成立时中止\n\n// 3. 使用调试器（gdb）\n// gcc -g program.c -o program\n// gdb ./program\n// break main  （设断点）\n// run         （运行）\n// print x     （打印变量）\n// next        （单步执行）\n```\n\n### 常见错误代码\n```c\n// 1. 忘记取地址符\nscanf(\"%d\", num);   // 错误: 应该是 &num\n\n// 2. 数组越界\nint arr[5];\narr[5] = 100;        // 错误: 最大下标是4\n\n// 3. 字符串比较用 ==\nif (str == \"hello\")  // 错误: 比较的是地址, 要用 strcmp\n\n// 4. 忘记 break\nswitch (n) {\n    case 1:          // 如果没用break, 会继续执行case 2\n        printf(\"1\");\n    case 2:\n        printf(\"2\");  // n=1 时也会输出 \"12\"\n}\n```"
+        "keywords": ["错误", "报错", "bug", "调试", "debug", "segmentation fault",
+                     "段错误", "编译错误", "链接错误", "运行时错误", "assert",
+                     "gdb", "valgrind", "core dump", "栈溢出"],
+        "related": ["调试技巧", "防御性编程"],
+        "content": """## C语言常见错误及调试
+
+### 1. 段错误（Segmentation Fault）
+最常见、最难排查的错误。原因：
+- 解引用空指针或野指针
+- 数组越界
+- 栈溢出（递归太深）
+- 修改字符串常量
+
+### 2. 编译错误
+`c
+int a = 10    // 忘记分号
+if (a > 0 {   // 括号不匹配
+printf("%d", x);  // x 未声明
+`
+
+### 3. 链接错误
+`
+undefined reference to myFunc'
+`
+解决：检查是否：
+- 包含了正确的 .c 文件
+- 函数名拼写正确
+- 链接了所需的库（-lm 数学库）
+
+### 4. 运行时错误
+| 错误 | 常见原因 |
+|------|---------|
+| 段错误 | 野指针、越界、栈溢出 |
+| 浮点异常 | 除0、模0 |
+| 断言失败 | assert() 条件为假 |
+| 缓冲区溢出 | strcpy 写超数组范围 |
+
+### 调试工具
+`ash
+# gcc 编译带调试信息
+gcc -g -Wall -Wextra program.c -o program
+
+# GDB 调试器
+gdb ./program
+  break main     # 设断点
+  run            # 运行
+  print x        # 打印变量
+  backtrace      # 查看调用栈
+  next / step    # 单步
+
+# Valgrind 检测内存
+valgrind --leak-check=full ./program
+`
+
+### 防御性编程习惯
+1. 总是检查 malloc/fopen 返回值
+2. 用 fgets 代替 gets
+3. 用 strncpy 代替 strcpy
+4. 初始化所有变量
+5. 使用 assert 验证前提条件
+6. 启用编译器警告：-Wall -Wextra -Werror
+"""
+    },
+    "位运算": {
+        "keywords": ["位运算", "按位与", "按位或", "按位异或", "按位取反", "左移",
+                     "右移", "&", "|", "^", "~", "<<", ">>", "掩码", "bit"],
+        "related": ["位域", "性能优化", "标志位"],
+        "content": """## C语言位运算
+
+### 基本位运算符
+| 运算符 | 名称 | 示例 | 结果 |
+|--------|------|------|------|
+| & | 按位与 | 5 & 3 | 1 |
+| \\| | 按位或 | 5 \\| 3 | 7 |
+| ^ | 按位异或 | 5 ^ 3 | 6 |
+| ~ | 按位取反 | ~5 | -6 |
+| << | 左移 | 5 << 1 | 10 |
+| >> | 右移 | 5 >> 1 | 2 |
+
+### 常用技巧
+`c
+// 检查第n位是否为1
+if (x & (1 << n)) { }
+
+// 设置第n位为1
+x |= (1 << n);
+
+// 清除第n位
+x &= ~(1 << n);
+
+// 翻转第n位
+x ^= (1 << n);
+
+// 判断奇偶
+if (x & 1) { /* 奇数 */ }
+
+// 交换两个数（不用临时变量）
+a ^= b; b ^= a; a ^= b;
+`
+
+### 用位运算表示标志位
+`c
+#define FLAG_READ   (1 << 0)  // 0001
+#define FLAG_WRITE  (1 << 1)  // 0010
+#define FLAG_EXEC   (1 << 2)  // 0100
+
+int flags = FLAG_READ | FLAG_WRITE;  // 0011
+if (flags & FLAG_READ) { /* 有读权限 */ }
+`
+"""
+    },
+    "链表": {
+        "keywords": ["链表", "linked list", "list", "节点", "node", "遍历",
+                     "插入", "删除", "单向链表", "双向链表", "循环链表"],
+        "related": ["指针", "动态内存", "数据结构"],
+        "content": """## C语言链表
+
+### 单向链表节点定义
+`c
+typedef struct Node {
+    int data;
+    struct Node *next;
+} Node;
+
+// 创建节点
+Node* create_node(int data) {
+    Node *node = (Node*)malloc(sizeof(Node));
+    if (!node) return NULL;
+    node->data = data;
+    node->next = NULL;
+    return node;
+}
+
+// 遍历
+void print_list(Node *head) {
+    while (head) {
+        printf("%d -> ", head->data);
+        head = head->next;
+    }
+    printf("NULL\\n");
+}
+`
+
+### 插入节点
+`c
+// 头部插入
+void push_front(Node **head, int data) {
+    Node *node = create_node(data);
+    node->next = *head;
+    *head = node;
+}
+
+// 尾部插入
+void push_back(Node **head, int data) {
+    Node *node = create_node(data);
+    if (!*head) { *head = node; return; }
+    Node *cur = *head;
+    while (cur->next) cur = cur->next;
+    cur->next = node;
+}
+`
+
+### 删除节点
+`c
+void delete_node(Node **head, int data) {
+    if (!*head) return;
+    Node *cur = *head, *prev = NULL;
+    while (cur && cur->data != data) {
+        prev = cur;
+        cur = cur->next;
+    }
+    if (!cur) return;  // 没找到
+    if (!prev) *head = cur->next;  // 删头节点
+    else prev->next = cur->next;
+    free(cur);
+}
+`
+"""
     }
 }
 
 
+def fuzzy_match_keyword(question, keyword):
+    """模糊匹配：支持拼写错误和小变化"""
+    q_lower = question.lower()
+    k_lower = keyword.lower()
+    # 直接包含
+    if k_lower in q_lower:
+        return True
+    # 模糊匹配（对英语关键词）
+    if len(k_lower) > 3 and k_lower.isascii():
+        ratio = difflib.SequenceMatcher(None, k_lower, q_lower).ratio()
+        if ratio > 0.8:
+            return True
+        # 检查关键词是否在问题中的某个词附近
+        for word in q_lower.split():
+            if difflib.SequenceMatcher(None, k_lower, word).ratio() > 0.75:
+                return True
+    return False
+
+
+def score_topic(question, topic_data):
+    """计算问题与某个主题的匹配得分"""
+    q_lower = question.lower()
+    score = 0
+
+    # 关键词匹配
+    for keyword in topic_data["keywords"]:
+        if fuzzy_match_keyword(question, keyword):
+            score += 3  # 关键词权重高
+
+    # 相关词匹配
+    for related in topic_data.get("related", []):
+        if fuzzy_match_keyword(question, related):
+            score += 1
+
+    return score
+
+
 def find_answer(question):
     """根据用户问题从知识库中查找最匹配的回答"""
-    question_lower = question.lower()
+    if not question:
+        return None
+
     best_match = None
     max_score = 0
 
     for topic, data in KNOWLEDGE_BASE.items():
-        score = 0
-        for keyword in data["keywords"]:
-            if keyword.lower() in question_lower:
-                score += 1
+        score = score_topic(question, data)
         if score > max_score:
             max_score = score
             best_match = data["content"]
 
-    if max_score > 0:
+    if max_score >= 2:  # 至少匹配一个关键词
         return best_match
     return None
 
 
+def get_suggestions(question):
+    """根据问题推荐相关主题"""
+    q_lower = question.lower()
+    scores = []
+    for topic, data in KNOWLEDGE_BASE.items():
+        score = score_topic(question, data)
+        if score > 0:
+            scores.append((score, topic))
+    scores.sort(reverse=True)
+    return [t for _, t in scores[:3]]
+
+
 def format_response(content, question):
+    """格式化知识库回答"""
     if content is None:
         return None
-    response = "C语言学习小教练\n\n"
-    response += "关于【%s】的相关知识：\n\n" % question
+    response = "📚 **来自本地知识库的回答**\n\n"
     response += content
-    response += "\n\n---\n提示：以上内容来自内置知识库。如需更深入的解释，建议配置API密钥使用AI模式。"
+    response += "\n\n---\n💡 *以上内容来自内置知识库。配置API密钥（推荐 DeepSeek）可解锁 AI 模式，获得更灵活深入的解释。*"
     return response

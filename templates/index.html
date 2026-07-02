@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -11,45 +11,46 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo">
-                    <span class="logo-icon">&#x1F4BB;</span>
+                    <span class="logo-icon">C</span>
                     <h1>{{ app_name }}</h1>
                 </div>
                 <p class="subtitle">{{ app_desc }}</p>
             </div>
             <div class="header-actions">
-                <button id="resetBtn" class="btn btn-sm" title="清空对话">&#x1F5D1; 清空</button>
+                <button id="resetBtn" class="btn btn-sm" title="清空对话">清空</button>
             </div>
         </header>
 
         <main class="chat-area" id="chatArea">
             <div class="welcome-message" id="welcomeMsg">
-                <div class="welcome-icon">&#x1F4BB;</div>
+                <div class="welcome-icon">&lt;C/&gt;</div>
                 <h2>欢迎使用 C语言学习小教练</h2>
-                <p>我可以帮你解答 C 语言编程问题，包括：</p>
-                <div class="topic-list">
-                    <span class="topic-tag">基础语法</span>
-                    <span class="topic-tag">控制流</span>
-                    <span class="topic-tag">数组</span>
-                    <span class="topic-tag">指针</span>
-                    <span class="topic-tag">函数</span>
-                    <span class="topic-tag">字符串</span>
-                    <span class="topic-tag">结构体</span>
-                    <span class="topic-tag">文件操作</span>
-                    <span class="topic-tag">内存管理</span>
-                    <span class="topic-tag">预处理</span>
+                <p>你可以问我任何 C 语言相关问题，试试点击下面的示例问题：</p>
+                <div class="topic-list" id="suggestionChips">
+                    <span class="topic-tag">printf 怎么用？</span>
+                    <span class="topic-tag">指针和数组的区别</span>
+                    <span class="topic-tag">malloc 怎么用？</span>
+                    <span class="topic-tag">段错误是什么？</span>
+                    <span class="topic-tag">static 作用</span>
+                    <span class="topic-tag">结构体怎么定义？</span>
                 </div>
-                <p class="hint">在下方输入你的 C 语言问题开始学习吧！</p>
+                <p class="hint">💡 提示：配置 API_KEY 环境变量后可解锁 AI 模式，回答更智能</p>
             </div>
         </main>
 
         <div class="input-area">
             <form id="chatForm" class="input-form">
                 <input type="text" id="questionInput" placeholder="输入你的 C 语言问题..." autocomplete="off" autofocus>
-                <button type="submit" id="sendBtn">&#x27A4;</button>
+                <button type="submit" id="sendBtn">发送</button>
             </form>
             <div class="status-bar">
-                <span id="modeIndicator">&#x1F4E1; 本地知识库模式</span>
+                <span id="modeIndicator">就绪</span>
             </div>
+        </div>
+
+        <div id="suggestionsBar" class="suggestions-bar" style="display:none;">
+            <span class="suggestions-label">追问：</span>
+            <div id="suggestionList" class="suggestions-list"></div>
         </div>
     </div>
 
@@ -61,70 +62,157 @@
         const sendBtn = document.getElementById("sendBtn");
         const resetBtn = document.getElementById("resetBtn");
         const modeIndicator = document.getElementById("modeIndicator");
+        const suggestionChips = document.getElementById("suggestionChips");
+        const suggestionsBar = document.getElementById("suggestionsBar");
+        const suggestionList = document.getElementById("suggestionList");
+
+        let isStreaming = false;
+        let currentSuggestions = [];
+
+        // Clickable suggestion chips
+        suggestionChips.addEventListener("click", (e) => {
+            if (e.target.classList.contains("topic-tag")) {
+                questionInput.value = e.target.textContent.trim();
+                chatForm.dispatchEvent(new Event("submit"));
+            }
+        });
 
         chatForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const question = questionInput.value.trim();
-            if (!question) return;
+            if (!question || isStreaming) return;
 
             questionInput.value = "";
             welcomeMsg.style.display = "none";
+            suggestionsBar.style.display = "none";
             sendBtn.disabled = true;
+            isStreaming = true;
 
             addMessage(question, "user");
-            addTypingIndicator();
+
+            // Try streaming first
+            const useStream = true;
+            let fullAnswer = "";
+            const botMsgId = addMessage("", "bot", true);
 
             try {
                 const resp = await fetch("/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ question })
+                    body: JSON.stringify({ question, stream: useStream })
                 });
-                const data = await resp.json();
-                removeTypingIndicator();
-                addMessage(data.answer, "bot", data.mode);
+
+                if (useStream && resp.headers.get("content-type")?.includes("text/event-stream")) {
+                    await handleStream(resp, botMsgId, question);
+                } else {
+                    // Non-streaming fallback
+                    const data = await resp.json();
+                    updateMessage(botMsgId, formatMessage(data.answer));
+                    currentSuggestions = data.suggestions || [];
+                    if (currentSuggestions.length > 0) showSuggestions(currentSuggestions);
+                    modeIndicator.textContent = data.mode === "ai" ? "AI 模式" :
+                                                data.mode === "local" ? "本地知识库" : "兜底回复";
+                }
             } catch (err) {
-                removeTypingIndicator();
-                addMessage("网络错误，请重试。", "bot");
+                updateMessage(botMsgId, "⚠️ 网络错误，请检查连接后重试。");
             }
+
             sendBtn.disabled = false;
+            isStreaming = false;
             questionInput.focus();
         });
 
-        function addMessage(text, sender, mode) {
+        async function handleStream(resp, msgId, question) {
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop() || "";
+
+                for (const line of lines) {
+                    if (!line.startsWith("data: ")) continue;
+                    try {
+                        const data = JSON.parse(line.slice(6));
+                        if (data.chunk) {
+                            appendToMessage(msgId, data.chunk);
+                        }
+                        if (data.done) {
+                            currentSuggestions = data.suggestions || [];
+                            if (currentSuggestions.length > 0) showSuggestions(currentSuggestions);
+                            modeIndicator.textContent = data.mode === "ai" ? "AI 回答" :
+                                                        data.mode === "local" ? "本地知识库" : "兜底";
+                            fixCodeBlocks(msgId);
+                        }
+                    } catch (e) {
+                        // Ignore malformed SSE data
+                    }
+                }
+            }
+        }
+
+        function addMessage(text, sender, isStreaming) {
             const msgDiv = document.createElement("div");
             msgDiv.className = "message " + sender + "-msg";
 
             const content = document.createElement("div");
             content.className = "msg-content";
-            content.innerHTML = formatMessage(text);
 
-            if (mode === "local") {
-                const badge = document.createElement("div");
-                badge.className = "mode-badge local";
-                badge.textContent = "本地知识库";
-                content.appendChild(badge);
-            } else if (mode === "ai") {
-                const badge = document.createElement("div");
-                badge.className = "mode-badge ai";
-                badge.textContent = "AI 回答";
-                content.appendChild(badge);
+            if (isStreaming) {
+                const textDiv = document.createElement("div");
+                textDiv.className = "msg-text";
+                textDiv.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+                content.appendChild(textDiv);
+            } else {
+                content.innerHTML = formatMessage(text);
             }
 
             msgDiv.appendChild(content);
             chatArea.appendChild(msgDiv);
             chatArea.scrollTop = chatArea.scrollHeight;
+            return msgDiv;
+        }
+
+        function updateMessage(msgDiv, html) {
+            const content = msgDiv.querySelector(".msg-content");
+            if (content) {
+                content.innerHTML = html;
+            }
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function appendToMessage(msgDiv, text) {
+            let textDiv = msgDiv.querySelector(".msg-text");
+            if (!textDiv) {
+                const content = msgDiv.querySelector(".msg-content");
+                if (content) {
+                    content.innerHTML = "";
+                    textDiv = document.createElement("div");
+                    textDiv.className = "msg-text";
+                    content.appendChild(textDiv);
+                }
+            }
+            if (textDiv) {
+                textDiv.innerHTML += escapeHtml(text);
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
         }
 
         function formatMessage(text) {
-            text = text.replace(/```(\w*)\n([\s\S]*?)```/g, function(m, lang, code) {
-                return '<pre><code class="language-' + (lang || "c") + '">' + escapeHtml(code.trim()) + "</code></pre>";
+            text = text.replace(/`(\w*)\n?([\s\S]*?)`/g, function(m, lang, code) {
+                return '<pre><code class="language-' + (lang || "c") + '">' + escapeHtml(code.trim()) + '</code></pre>';
             });
-            text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
-            text = text.replace(/^### (.+)$/gm, "<h3>$1</h3>");
-            text = text.replace(/^## (.+)$/gm, "<h2>$1</h2>");
-            text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+            text = text.replace(/([^]+)/g, "<code></code>");
+            text = text.replace(/^### (.+)$/gm, "<h3></h3>");
+            text = text.replace(/^## (.+)$/gm, "<h2></h2>");
+            text = text.replace(/\*\*(.+?)\*\*/g, "<strong></strong>");
             text = text.replace(/\n/g, "<br>");
+            // Table rendering
             text = text.replace(/\|(.+)\|/g, function(m, content) {
                 var cells = content.split("|").map(function(c) { return c.trim(); });
                 if (cells[0].match(/^[-]+$/)) return "";
@@ -133,7 +221,9 @@
             text = text.replace(/<tr>/g, "<table><tr>");
             text = text.replace(/<\/table>\s*<table>/g, "");
             text = text.replace(/<\/tr>\s*<tr>/g, "</tr><tr>");
-            text = text + "</table>";
+            if (text.includes("<table>") && !text.endsWith("</table>")) {
+                text += "</table>";
+            }
             return text;
         }
 
@@ -141,26 +231,49 @@
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        function addTypingIndicator() {
-            const div = document.createElement("div");
-            div.className = "message bot-msg";
-            div.id = "typingIndicator";
-            div.innerHTML = '<div class="msg-content"><div class="typing"><span></span><span></span><span></span></div></div>';
-            chatArea.appendChild(div);
+        function fixCodeBlocks(msgId) {
+            const content = msgId.querySelector(".msg-content");
+            if (!content) return;
+            // Re-parse the entire content for proper code block formatting
+            const html = content.innerHTML;
+            content.innerHTML = formatMessage(html.replace(/<br>/g, "\n").replace(/&lt;br&gt;/g, "\n"));
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
-        function removeTypingIndicator() {
-            const el = document.getElementById("typingIndicator");
-            if (el) el.remove();
+        function showSuggestions(suggestions) {
+            suggestionList.innerHTML = "";
+            suggestions.forEach(function(s) {
+                const chip = document.createElement("span");
+                chip.className = "suggestion-chip";
+                chip.textContent = s;
+                chip.addEventListener("click", function() {
+                    questionInput.value = s;
+                    chatForm.dispatchEvent(new Event("submit"));
+                });
+                suggestionList.appendChild(chip);
+            });
+            suggestionsBar.style.display = "flex";
         }
 
         resetBtn.addEventListener("click", async () => {
+            if (isStreaming) return;
             await fetch("/reset", { method: "POST" });
             document.querySelectorAll(".message").forEach(function(m) { m.remove(); });
+            suggestionsBar.style.display = "none";
             welcomeMsg.style.display = "block";
+            modeIndicator.textContent = "就绪";
             questionInput.focus();
         });
+
+        // Ctrl+Enter shortcut to send
+        questionInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && e.ctrlKey) {
+                chatForm.dispatchEvent(new Event("submit"));
+            }
+        });
+
+        // Restore scroll position on page load
+        chatArea.scrollTop = chatArea.scrollHeight;
     </script>
 </body>
 </html>
